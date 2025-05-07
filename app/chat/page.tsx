@@ -188,21 +188,22 @@ export default function ChatPage() {
               />
               <Button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                
                 className="bg-white text-black"
               >
                 <Send className="h-4 w-4" />
               </Button>
               <Button
-                onClick={() => {
-                  handleStop();
-                  avatarRef.current?.cancel();
-                }}
-                disabled={!isLoading}
-                className="bg-red-600 text-white hover:bg-red-700"
-              >
-                Stop
-              </Button>
+                  onClick={() => {
+                    handleStop(); // stops GPT stream
+                    avatarRef.current?.cancel(); // stops avatar speech
+                  }}
+                  
+                  className="bg-red-600 text-white hover:bg-red-700"
+                >
+                  Stop
+                </Button>
+
             </form>
           </div>
         </div>

@@ -16,6 +16,7 @@ import StreamingAvatar, {
 const StreamingAvatarComponent = forwardRef((props, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [avatar, setAvatar] = useState<StreamingAvatar | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false); // NEW STATE
 
   const fetchAccessToken = async (): Promise<string> => {
     const response = await fetch("/api/heygen-token");
@@ -49,10 +50,15 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
 
   const speak = async (text: string) => {
     if (avatar && text) {
-      await avatar.speak({
-        text,
-        taskType: TaskType.REPEAT
-      });
+      try {
+        setIsSpeaking(true);
+        await avatar.speak({
+          text,
+          taskType: TaskType.REPEAT
+        });
+      } catch (err) {
+        console.error("Speak error:", err);
+      } 
     }
   };
 
@@ -62,6 +68,8 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
         await avatar.interrupt();
       } catch (err) {
         console.error("Error while interrupting avatar:", err);
+      } finally {
+        setIsSpeaking(false);
       }
     }
   };
@@ -69,7 +77,8 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
   useImperativeHandle(ref, () => ({
     initialize,
     speak,
-    cancel: interrupt
+    cancel: interrupt,
+    isSpeaking
   }));
 
   return (
@@ -121,4 +130,5 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
   );
 });
 
+StreamingAvatarComponent.displayName = "StreamingAvatarComponent";
 export default StreamingAvatarComponent;
