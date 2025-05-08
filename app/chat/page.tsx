@@ -23,24 +23,49 @@ export default function ChatPage() {
   const isMobile = useIsMobile();
   const avatarRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messageDurations, setMessageDurations] = useState<Record<string, number>>({});
+  const [stoppedTypingId, setStoppedTypingId] = useState<string | null>(null);
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showConversation, setShowConversation] = useState(!isMobile);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  // ✅ New state to track which message is being spoken
+  const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null);
+  const [triggerSyncId, setTriggerSyncId] = useState<string | null>(null);
 
   // Init avatar
   useEffect(() => {
     if (hasInteracted && avatarRef.current) {
       avatarRef.current.initialize();
     }
-  }, [hasInteracted]);
+  }, [hasInteracted]);      
 
-  // Avatar speaks
-  useEffect(() => {
-    if (lastCompletedAssistantMessage && avatarRef.current) {
-      avatarRef.current.speak(lastCompletedAssistantMessage.content);
-    }
+    useEffect(() => {
+      const speakMessage = async () => {
+        if (lastCompletedAssistantMessage && avatarRef.current) {
+          const messageId = lastCompletedAssistantMessage.id;
+          const text = lastCompletedAssistantMessage.content;
+    
+          setTriggerSyncId(null); // reset trigger
+          setCurrentlySpeakingId(messageId);
+    
+          const result = await avatarRef.current.speak(text); // ✅ returns { duration_ms, task_id }
+    
+          if (result?.duration_ms) {
+            setMessageDurations((prev) => ({
+              ...prev,
+              [messageId]: result.duration_ms + 1000
+            }));
+          }
+    
+          setTriggerSyncId(messageId); // trigger typing effect
+        }
+      };
+    
+    speakMessage();
   }, [lastCompletedAssistantMessage]);
-
+  
   // Auto-scroll
   useEffect(() => {
     if (messagesEndRef.current && chatContainerRef.current) {
@@ -56,9 +81,9 @@ export default function ChatPage() {
   };
 
   return (
-    <main className="flex flex-col h-screen bg-black text-white">
+    <main className="flex flex-col h-screen bg-white text-black">
       {/* Header */}
-      <header className="w-full border-b border-gray-800 bg-black px-4 py-4 flex items-center justify-start shadow-sm">
+      <header className="w-full border-b border-gray-200 bg-black px-4 py-4 flex items-center justify-start shadow-sm">
         <img
           src="/dark.webp"
           alt="EOXS Logo"
@@ -69,20 +94,27 @@ export default function ChatPage() {
 
       {/* STEP 1: Initial Centered Chat */}
       {!hasInteracted ? (
-        <div className="flex-1 flex flex-col justify-between bg-black text-white">
+        <div className="flex-1 flex flex-col justify-between bg-white text-black">
           <div className="flex-1 flex items-center justify-center overflow-y-auto px-4">
             <div className="w-full max-w-2xl space-y-4">
               {messages.length === 0 ? (
-                <div className="text-center text-gray-400 p-4">
+                <div className="text-center text-gray-500 p-4">
                   <h3 className="text-2xl font-semibold mb-2">Welcome to Joe 2.0</h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-600">
                     Ask me anything to begin our conversation.
                   </p>
                 </div>
               ) : (
                 <>
                   {messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
+                     <ChatMessage
+                     key={message.id}
+                     message={message}
+                     isSpeaking={currentlySpeakingId === message.id}
+                     triggerSync={triggerSyncId === message.id}
+                     durationMs={messageDurations[message.id]}
+                     stopTypingSignal={stoppedTypingId === message.id}
+                   />
                   ))}
                   <div ref={messagesEndRef} />
                 </>
@@ -91,10 +123,7 @@ export default function ChatPage() {
           </div>
 
           {/* Input */}
-          <form
-            onSubmit={handleSendMessage}
-            className="w-full flex justify-center mt-auto"
-          >
+          <form onSubmit={handleSendMessage} className="w-full flex justify-center mt-auto">
             <div className="w-full max-w-2xl px-4 pb-4">
               <div className="flex gap-2 bg-transparent">
                 <Input
@@ -102,12 +131,12 @@ export default function ChatPage() {
                   onChange={handleInputChange}
                   placeholder="Type your message..."
                   disabled={isLoading}
-                  className="flex-1 text-white bg-black border-gray-700 placeholder-gray-500"
+                  className="flex-1 text-black bg-white border-gray-300 placeholder-gray-400"
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="bg-white text-black"
+                  className="bg-black text-white hover:bg-gray-900"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
@@ -167,14 +196,23 @@ export default function ChatPage() {
               ) : (
                 <>
                   {messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
+                  <ChatMessage
+                  key={message.id}
+                  message={message}
+                  isSpeaking={currentlySpeakingId === message.id}
+                  triggerSync={triggerSyncId === message.id}
+                  durationMs={messageDurations[message.id]}
+                  stopTypingSignal={stoppedTypingId === message.id}
+                />
+                
+                 
                   ))}
                   <div ref={messagesEndRef} />
                 </>
               )}
             </div>
 
-            {/* Input (Always Visible) */}
+            {/* Input */}
             <form
               onSubmit={handleSendMessage}
               className="p-3 border-t border-gray-800 flex gap-2 bg-[#0f0f0f]"
@@ -186,23 +224,22 @@ export default function ChatPage() {
                 disabled={isLoading}
                 className="flex-1 text-white bg-black border-gray-700 placeholder-gray-500"
               />
-              <Button
-                type="submit"
-                
-                className="bg-white text-black"
-              >
+              <Button type="submit" className="bg-white text-black">
                 <Send className="h-4 w-4" />
               </Button>
               <Button
-                  onClick={() => {
-                    handleStop(); // stops GPT stream
-                    avatarRef.current?.cancel(); // stops avatar speech
-                  }}
-                  
-                  className="bg-red-600 text-white hover:bg-red-700"
-                >
-                  Stop
-                </Button>
+              onClick={() => {
+                handleStop();
+                avatarRef.current?.cancel();
+                setStoppedTypingId(currentlySpeakingId); // ✅ stop that message's typing
+                setCurrentlySpeakingId(null);            // ✅ reset loader
+                setTriggerSyncId(null);
+              }}
+              
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Stop
+            </Button>
 
             </form>
           </div>

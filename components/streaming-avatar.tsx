@@ -1,22 +1,18 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  forwardRef,
-  useImperativeHandle
-} from "react";
+import { useRef, useState, forwardRef, useImperativeHandle } from "react";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
-  TaskType
+  TaskType,
 } from "@heygen/streaming-avatar";
+import { useTheme } from "next-themes";
 
 const StreamingAvatarComponent = forwardRef((props, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [avatar, setAvatar] = useState<StreamingAvatar | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false); // NEW STATE
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const { theme } = useTheme();
 
   const fetchAccessToken = async (): Promise<string> => {
     const response = await fetch("/api/heygen-token");
@@ -44,22 +40,40 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
       quality: AvatarQuality.Medium,
       avatarName: process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID!,
       language: "English",
-      disableIdleTimeout: true
+      disableIdleTimeout: true,
     });
   };
 
-  const speak = async (text: string) => {
-    if (avatar && text) {
+  // ✅ Speak with 1 retry if first call fails
+  const speak = async (text: string): Promise<{ duration_ms?: number; task_id?: string }> => {
+    if (!avatar || !text) return {};
+
+    setIsSpeaking(true);
+
+    const trySpeak = async () => {
       try {
-        setIsSpeaking(true);
-        await avatar.speak({
+        const result = await avatar.speak({
           text,
-          taskType: TaskType.REPEAT
+          taskType: TaskType.REPEAT,
         });
+        return result; // contains { duration_ms, task_id }
       } catch (err) {
-        console.error("Speak error:", err);
-      } 
+        console.error("Avatar speak error:", err);
+        return null;
+      }
+    };
+
+    let result = await trySpeak();
+
+    // 🔁 Retry once after 5s if first attempt fails
+    if (!result) {
+      console.warn("Retrying avatar.speak after 5s...");
+      await new Promise((res) => setTimeout(res, 5000));
+      result = await trySpeak();
     }
+
+    setIsSpeaking(false);
+    return result || {}; // fallback to empty object if still failed
   };
 
   const interrupt = async () => {
@@ -74,17 +88,18 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
     }
   };
 
+  // ✅ Expose functions via ref
   useImperativeHandle(ref, () => ({
     initialize,
-    speak,
+    speak, // returns { duration_ms, task_id }
     cancel: interrupt,
-    isSpeaking
+    isSpeaking,
   }));
 
   return (
     <div className="w-full h-full px-2">
       <div
-        className="relative w-full h-full rounded-xl border shadow-md overflow-hidden bg-gradient-to-b from-gray-100 to-gray-300 flex items-center justify-center"
+        className="relative w-full h-full rounded-xl border shadow-md overflow-hidden bg-white flex items-center justify-center"
         style={{ height: "100%", minHeight: "100%" }}
       >
         <video
@@ -95,13 +110,13 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
           style={{
             zIndex: 2,
             background: "transparent",
-            pointerEvents: "none"
+            pointerEvents: "none",
           }}
         />
         {!videoRef.current || !videoRef.current.srcObject ? (
           <div className="flex flex-col items-center justify-center w-full h-full z-1">
             <div
-              className="rounded-full bg-gray-300 flex items-center justify-center"
+              className="rounded-full bg-gray-100 flex items-center justify-center"
               style={{ width: 72, height: 72 }}
             >
               <svg
@@ -110,7 +125,7 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                className="text-gray-500"
+                className="text-eoxs-green"
               >
                 <path
                   strokeLinecap="round"
@@ -120,9 +135,7 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
                 />
               </svg>
             </div>
-            <span className="mt-2 text-gray-500 text-xs">
-              Avatar will appear here
-            </span>
+            <span className="mt-2 text-gray-500 text-xs">Avatar will appear here</span>
           </div>
         ) : null}
       </div>

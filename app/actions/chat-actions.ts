@@ -1,60 +1,53 @@
-"use server"
+"use server";
 
-import { OpenAI } from "openai"
 
-async function getAssistantResponse(messages: any[], threadId?: string) {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  const assistantId = process.env.OPENAI_ASSISTANT_ID
+import { OpenAI } from "openai";
 
-  if (!assistantId) {
-    throw new Error("OpenAI Assistant ID is not configured")
-  }
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const assistantId = process.env.OPENAI_ASSISTANT_ID!;
 
+export async function generateChatResponse(messages: any[], threadId?: string) {
   try {
     const thread = threadId
       ? await openai.beta.threads.retrieve(threadId)
-      : await openai.beta.threads.create()
+      : await openai.beta.threads.create();
 
-    const lastUserMessage = messages.filter(m => m.role === "user").pop()
-    if (!lastUserMessage) throw new Error("No user message found")
+    const lastUserMessage = messages.filter(m => m.role === "user").pop();
+    if (!lastUserMessage) throw new Error("No user message found.");
 
     await openai.beta.threads.messages.create(thread.id, {
       role: "user",
-      content: lastUserMessage.content
-    })
+      content: lastUserMessage.content,
+    });
 
     const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: assistantId
-    })
+      assistant_id: assistantId,
+    });
 
-    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id)
-    while (runStatus.status === "queued" || runStatus.status === "in_progress") {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+    while (["queued", "in_progress"].includes(runStatus.status)) {
+      await new Promise(res => setTimeout(res, 1000));
+      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     }
 
     if (runStatus.status === "completed") {
-      const messages = await openai.beta.threads.messages.list(thread.id)
-      const lastMessage = messages.data[0]
-      const textContent = lastMessage.content.find(c => c.type === "text")
-      if (!textContent || textContent.type !== "text") {
-        throw new Error("No text content found in response")
-      }
-      return textContent.text.value
-    } else {
-      throw new Error(`Run ended with status: ${runStatus.status}`)
-    }
-  } catch (error) {
-    console.error("Assistant API error:", error)
-    throw error
-  }
-}
+      const threadMessages = await openai.beta.threads.messages.list(thread.id);
+      const lastMessage = threadMessages.data.find(m => m.role === "assistant");
+      const textContent = lastMessage?.content.find(c => c.type === "text");
 
-export async function generateChatResponse(messages: any[]) {
-  try {
-    return await getAssistantResponse(messages)
-  } catch (error) {
-    console.error("Chat error:", error)
-    return "An error occurred while generating the response"
+      if (!textContent || textContent.type !== "text") {
+        throw new Error("No valid text response found.");
+      }
+
+      return {
+        text: textContent.text.value,
+        threadId: thread.id, // ✅ return for frontend session
+      };
+    } else {
+      throw new Error(`Run ended with status: ${runStatus.status}`);
+    }
+  } catch (err) {
+    console.error("generateChatResponse error:", err);
+    throw new Error("Failed to generate assistant response.");
   }
 }

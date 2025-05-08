@@ -2,112 +2,119 @@
 
 import { cn } from "@/lib/utils";
 import type { Message } from "ai";
-import { User, Bot, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
+import { User, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface ChatMessageProps {
   message: Message;
-  onVoiceInput?: (text: string) => void;
+  isSpeaking: boolean;
+  triggerSync?: boolean;
+  durationMs?: number;
+  stopTypingSignal?: boolean;
 }
 
-export default function ChatMessage({ message, onVoiceInput }: ChatMessageProps) {
-  const [isStreaming, setIsStreaming] = useState(
-    message.role === "assistant" && message.content === ""
-  );
-  const [isListening, setIsListening] = useState(false);
-  const { theme } = useTheme();
-
-  useEffect(() => {
-    if (message.role === "assistant") {
-      setIsStreaming(message.content === "");
-    }
-  }, [message.content, message.role]);
+export default function ChatMessage({
+  message,
+  isSpeaking,
+  triggerSync = false,
+  durationMs,
+  stopTypingSignal = false
+}: ChatMessageProps) {
+  const [displayedContent, setDisplayedContent] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
 
   const isUser = message.role === "user";
+  const fullContent = message.content ?? "";
+  const words = fullContent.split(/\s+/).filter(Boolean);
 
-  const startListening = async () => {
-    if (!("webkitSpeechRecognition" in window)) {
-      alert("Speech recognition is not supported in this browser.");
-      return;
+  const wordIndexRef = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Typing animation
+  useEffect(() => {
+    if (!isUser && isSpeaking && triggerSync && fullContent) {
+      setDisplayedContent("");
+      wordIndexRef.current = 0;
+      setIsTyping(true);
+
+      const delayPerWord =
+        durationMs && words.length > 0 ? durationMs / words.length : 300;
+
+      intervalRef.current = setInterval(() => {
+        const word = words[wordIndexRef.current];
+        if (typeof word === "string") {
+          setDisplayedContent((prev) => prev + word + " ");
+        }
+
+        wordIndexRef.current++;
+
+        if (wordIndexRef.current >= words.length && intervalRef.current) {
+          clearInterval(intervalRef.current);
+          setIsTyping(false);
+        }
+      }, delayPerWord);
     }
 
-    const recognition = new (window as any).webkitSpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onstart = () => {
-      setIsListening(true);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
+  }, [isSpeaking, triggerSync, durationMs, fullContent]);
 
-    recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0])
-        .map((result: any) => result.transcript)
-        .join("");
-
-      if (onVoiceInput) {
-        onVoiceInput(transcript);
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error", event.error);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
-  };
-
-  const stopListening = () => {
-    setIsListening(false);
-  };
+  // Stop signal
+  useEffect(() => {
+    if (stopTypingSignal && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      setDisplayedContent(prev => prev.trim()); // stop at current point
+      setIsTyping(false);
+    }
+  }, [stopTypingSignal]);
 
   return (
-    <div className="relative">
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} w-full`}>
       <div
         className={cn(
-          "rounded-lg p-4 flex gap-4 items-start",
+          "max-w-[85%] rounded-2xl p-3 shadow-sm",
           isUser
-            ? "bg-primary/10 text-primary dark:bg-primary/80 dark:text-primary-foreground"
-            : "bg-muted text-foreground"
+            ? "bg-eoxs-green text-white rounded-tr-none"
+            : "bg-white dark:bg-gray-800 text-black dark:text-white rounded-tl-none border border-gray-100 dark:border-gray-700"
         )}
       >
-       <div className="w-8 h-8 rounded-full overflow-hidden bg-background flex items-center justify-center flex-shrink-0">
-          {isUser ? (
-            <User className="h-5 w-5" />
-          ) : (
-            <img
-              src="/pic.png" 
-              alt="Joseph Malchar"
-              className="w-full h-full object-cover"
-            />
+        <div className="flex items-start gap-2">
+          {!isUser && (
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0 mt-0.5 border border-gray-200">
+              <img src="/pic.png" alt="Joseph Malchar" className="w-full h-full object-cover" />
+            </div>
           )}
-        </div>
 
+          <div className="flex-1 min-w-0">
+            <div
+              className={cn(
+                "text-xs font-medium mb-1",
+                isUser ? "text-white/90" : "text-eoxs-green dark:text-eoxs-green/90"
+              )}
+            >
+              {isUser ? "You": "Joseph Malchar"}
+            </div>
 
-        <div className="flex-1">
-          <div className="font-medium mb-1">
-            {isUser ? "You" : "Joseph Malchar"}
+            <div className="text-sm whitespace-pre-wrap break-words">
+              {isUser ? (
+                fullContent
+              ) : fullContent === "" && !isTyping ? (
+                <div className="flex items-center gap-2 text-gray-500 text-sm">
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  <span>Joe is thinking...</span>
+                </div>
+              ) : (
+                displayedContent
+              )}
+            </div>
           </div>
 
-          <div className="text-sm whitespace-pre-wrap">
-            {isStreaming ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Generating response...</span>
-              </div>
-            ) : message.content === "Cancelled." ? (
-              <span className="text-red-500">Response cancelled by User.</span>
-            ) : (
-              message.content
-            )}
-          </div>
+          {isUser && (
+            <div className="w-6 h-6 rounded-full o verflow-hidden bg-eoxs-green/80 flex items-center justify-center flex-shrink-0 mt-0.5 border border-white/20">
+              <User className="h-3 w-3 text-white" />
+            </div>
+          )}
         </div>
       </div>
     </div>
