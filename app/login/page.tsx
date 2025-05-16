@@ -13,86 +13,24 @@ import Cookies from "js-cookie"
 const VALID_EMAIL = "gerdau@gmail.com"
 const VALID_PASSWORD = "gerdau@123"
 
-// Timer duration in milliseconds (1 minute)
-const TIMER_DURATION = 60 * 1000
-
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const [timeRemaining, setTimeRemaining] = useState<number>(TIMER_DURATION)
 
   // Check if user is already logged in
   useEffect(() => {
     const authStatus = Cookies.get("isAuthenticated")
     if (authStatus === "true") {
       setIsAuthenticated(true)
-      startTimer()
+      router.replace("/chat")
     }
     setIsCheckingAuth(false)
-  }, [])
-
-  // Reset timer on user activity
-  useEffect(() => {
-    const resetTimer = () => {
-      if (timer) {
-        clearTimeout(timer)
-      }
-      if (isAuthenticated) {
-        setTimeRemaining(TIMER_DURATION)
-        startTimer()
-      }
-    }
-
-    const events = ["mousemove", "keydown", "click", "scroll", "mousedown", "keypress", "touchstart"]
-    events.forEach(event => {
-      window.addEventListener(event, resetTimer)
-    })
-
-    return () => {
-      events.forEach(event => {
-        window.removeEventListener(event, resetTimer)
-      })
-    }
-  }, [timer, isAuthenticated])
-
-  // Update time remaining
-  useEffect(() => {
-    if (!isAuthenticated || !timer) return
-
-    const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1000) {
-          clearInterval(interval)
-          return 0
-        }
-        return prev - 1000
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [isAuthenticated, timer])
-
-  const startTimer = () => {
-    if (timer) {
-      clearTimeout(timer)
-    }
-    setTimeRemaining(TIMER_DURATION)
-    const newTimer = setTimeout(() => {
-      handleLogout()
-      toast({
-        title: "Session expired",
-        description: "You have been logged out due to inactivity",
-        variant: "destructive"
-      })
-    }, TIMER_DURATION)
-    setTimer(newTimer)
-  }
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,7 +40,6 @@ export default function LoginPage() {
       if (email === VALID_EMAIL && password === VALID_PASSWORD) {
         setIsAuthenticated(true)
         Cookies.set("isAuthenticated", "true", { expires: 7 }) // Expires in 7 days
-        startTimer()
         router.replace("/chat")
         toast({
           title: "Login successful",
@@ -126,11 +63,6 @@ export default function LoginPage() {
     try {
       setIsAuthenticated(false)
       Cookies.remove("isAuthenticated")
-      if (timer) {
-        clearTimeout(timer)
-        setTimer(null)
-      }
-      setTimeRemaining(TIMER_DURATION)
       router.replace("/login")
       toast({
         title: "Logged out",
@@ -166,22 +98,6 @@ export default function LoginPage() {
             className="h-12 w-auto max-w-[180px] object-contain" 
           />
         </div>
-        {isAuthenticated && (
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-300">
-              Session expires in: {Math.ceil(timeRemaining / 1000)}s
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
-            >
-              <LogOut className="h-4 w-4 mr-1" />
-              Logout
-            </Button>
-          </div>
-        )}
       </header>
 
       {/* Login Form */}
@@ -235,8 +151,6 @@ export default function LoginPage() {
               </form>
             </CardContent>
           </Card>
-
-          
         </div>
       </div>
     </main>
