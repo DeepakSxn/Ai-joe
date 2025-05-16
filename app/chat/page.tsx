@@ -10,10 +10,12 @@ import StreamingAvatarComponent from "@/components/streaming-avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Send, Mic, MicOff, X, MessageSquare, Volume2, Bot, ArrowRight, ArrowLeft, Menu, StopCircle, ArrowUp } from "lucide-react"
+import { Send, Mic, MicOff, X, MessageSquare, Volume2, Bot, ArrowRight, ArrowLeft, Menu, StopCircle, ArrowUp, LogOut } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
+import Cookies from "js-cookie"
+import IdleTimer from "@/components/idle-timer"
 
 type ChatMode = "text-only" | "avatar" | null
 
@@ -115,8 +117,14 @@ export default function ChatPage() {
     }
   }
 
+  const handleLogout = () => {
+    Cookies.remove("isAuthenticated")
+    router.push("/login")
+  }
+
   return (
     <main className="flex flex-col h-screen bg-white text-black">
+      <IdleTimer />
       {/* Header */}
       <header className="w-full border-b border-gray-700 bg-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
@@ -156,6 +164,24 @@ export default function ChatPage() {
               </Tooltip>
             </TooltipProvider>
           )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Logout
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sign out of your account</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </header>
 
