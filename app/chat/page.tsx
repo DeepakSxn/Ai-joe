@@ -14,7 +14,6 @@ import { Send, Mic, MicOff, X, MessageSquare, Volume2, Bot, ArrowRight, ArrowLef
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
-import TemperatureToggle from "@/components/temperature-toggle"
 
 type ChatMode = "text-only" | "avatar" | null
 
@@ -29,7 +28,6 @@ export default function ChatPage() {
   const [stoppedTypingId, setStoppedTypingId] = useState<string | null>(null)
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null)
   const [triggerSyncId, setTriggerSyncId] = useState<string | null>(null)
-  const [temperatureUnit, setTemperatureUnit] = useState<"C" | "F">("F")
 
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const [showConversation, setShowConversation] = useState(!isMobile)
@@ -83,11 +81,6 @@ export default function ChatPage() {
     e.preventDefault()
     if (!hasInteracted) setHasInteracted(true)
     setCurrentlySpeakingId("pending")
-    
-    // Add temperature unit to the input
-    const messageWithUnit = `${input} (Temperature unit: ${temperatureUnit})`
-    // Update the input value directly
-    handleInputChange({ target: { value: messageWithUnit } } as React.ChangeEvent<HTMLInputElement>)
     await handleSubmit(e)
 
     if (inputRef.current) {
@@ -144,30 +137,24 @@ export default function ChatPage() {
             About
           </Button>
           {hasInteracted && chatMode && (
-            <>
-              <TemperatureToggle 
-                onTemperatureChange={setTemperatureUnit}
-                defaultUnit="F"
-              />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleReset}
-                      className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-1" />
-                      Change Mode
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Switch between text and avatar modes</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Change Mode
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Switch between text and avatar modes</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </header>
@@ -177,8 +164,8 @@ export default function ChatPage() {
         <div className="flex-1 flex items-center justify-center p-4 bg-white">
           <div className="w-full max-w-4xl">
             <div className="text-center mb-8">
-              <h1 className="text-4xl  mb-2 text-black-600  ">Welcome to Joe 2.0</h1>
-              <h2 className="text-2xl font-semibold text-gray-700"> I'll  answers your questions — just like I did on the floor</h2>
+              <h1 className="text-4xl mb-2" style={{ color: "#1B1212", fontWeight: 700 }}>Welcome to Joe 2.0</h1>
+              <h2 className="text-2xl" style={{ color: "#4A5568", fontWeight: 600 }}>I'll answer your questions — just like I did on the floor</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -191,8 +178,8 @@ export default function ChatPage() {
                         <MessageSquare className="h-6 w-6 text-[#10a37f]" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold">Text-Only Mode</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg" style={{ color: "#1B1212", fontWeight: 600 }}>Text-Only Mode</h3>
+                        <p className="text-sm" style={{ color: "#4A5568" }}>
                           Fast, accurate answers for your steel questions.
                         </p>
                       </div>
@@ -201,11 +188,11 @@ export default function ChatPage() {
                     <div className="h-40 flex items-center justify-center bg-[#f7f7f8] rounded-lg mb-4">
                       <div className="flex flex-col items-center">
                         <Bot className="h-16 w-16 text-[#10a37f]/30 mb-2" />
-                        <div className="text-base text-gray-500">Instant technical support</div>
+                        <div className="text-base" style={{ color: "#4A5568" }}>Instant technical support</div>
                       </div>
                     </div>
 
-                    <div className="space-y-2 text-sm text-gray-600 mb-6">
+                    <div className="space-y-2 text-sm mb-6" style={{ color: "#4A5568" }}>
                       <div className="flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#10a37f]"></span>
                         <span>Steel grades, specs & calculations</span>
@@ -243,8 +230,8 @@ export default function ChatPage() {
                         <Volume2 className="h-6 w-6 text-[#10a37f]" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold">Interactive Mode</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg" style={{ color: "#1B1212", fontWeight: 600 }}>Interactive Mode</h3>
+                        <p className="text-sm" style={{ color: "#4A5568" }}>
                           Real-time guidance with Joe's avatar.
                         </p>
                       </div>
@@ -252,12 +239,12 @@ export default function ChatPage() {
 
                     <div className="h-40 flex items-center justify-center bg-[#f7f7f8] rounded-lg mb-4">
                       <div className="flex flex-col items-center">
-                        <img src="/pic.png" alt="Joe Avatar" className="h-16 w-16 rounded-full mb-2" />
-                        <div className="text-base text-gray-500">Live expert advice</div>
+                        <img src="/joe-avatar.png" alt="Joe Avatar" className="h-16 w-16 rounded-full mb-2" />
+                        <div className="text-base" style={{ color: "#4A5568" }}>Live expert advice</div>
                       </div>
                     </div>
 
-                    <div className="space-y-2 text-sm text-gray-600 mb-6">
+                    <div className="space-y-2 text-sm mb-6" style={{ color: "#4A5568" }}>
                       <div className="flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#10a37f]"></span>
                         <span>Discuss complex topics</span>

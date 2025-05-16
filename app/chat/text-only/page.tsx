@@ -8,7 +8,6 @@ import { Send, X, ArrowLeft, StopCircle, Mic, ArrowUp } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 import type { Message } from "ai"
-import TemperatureToggle from "@/components/temperature-toggle"
 
 export default function TextOnlyChat() {
   const router = useRouter()
@@ -28,7 +27,6 @@ export default function TextOnlyChat() {
   const [isTyping, setIsTyping] = useState<Record<string, boolean>>({})
   const [stoppedTypingId, setStoppedTypingId] = useState<string | null>(null)
   const [isAnyMessageTyping, setIsAnyMessageTyping] = useState(false)
-  const [temperatureUnit, setTemperatureUnit] = useState<"C" | "F">("F")
 
   // Auto-scroll
   useEffect(() => {
@@ -74,11 +72,6 @@ export default function TextOnlyChat() {
     e.preventDefault()
     setStoppedTypingId(null)
     setIsAnyMessageTyping(true)
-    
-    // Add temperature unit to the input
-    const messageWithUnit = `${input} (Temperature unit: ${temperatureUnit})`
-    // Update the input value directly
-    handleInputChange({ target: { value: messageWithUnit } } as React.ChangeEvent<HTMLInputElement>)
     await handleSubmit(e)
 
     if (inputRef.current) {
@@ -108,10 +101,6 @@ export default function TextOnlyChat() {
         </div>
 
         <div className="flex items-center gap-4">
-          <TemperatureToggle 
-            onTemperatureChange={setTemperatureUnit}
-            defaultUnit="F"
-          />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
