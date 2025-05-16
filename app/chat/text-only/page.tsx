@@ -44,7 +44,7 @@ export default function TextOnlyChat() {
         setIsTyping((prev) => ({ ...prev, [message.id]: true }))
         let currentText = ""
         const content = message.content
-        const typingSpeed = 30 // Average typing speed in milliseconds per character
+        const typingSpeed = 10 // Average typing speed in milliseconds per character (20 words per second)
 
         const typeText = () => {
           if (currentText.length < content.length && !stoppedTypingId) {
@@ -92,7 +92,7 @@ export default function TextOnlyChat() {
   return (
     <main className="flex flex-col h-screen bg-white text-black">
       {/* Header */}
-      <header className="w-full border-b border-gray-700 bg-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-700 bg-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <img 
             src="/dark.webp" 
@@ -124,7 +124,7 @@ export default function TextOnlyChat() {
       </header>
 
       {/* Chat Interface */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white mt-[73px]">
         <div className="flex-1 overflow-y-auto p-4" ref={chatContainerRef}>
           <div className="max-w-3xl mx-auto space-y-4">
             {messages.length === 0 ? (
@@ -133,30 +133,30 @@ export default function TextOnlyChat() {
                   <span className="text-2xl font-bold text-eoxs-green">Welcome to Joe 2.0</span>
                 </div>
                 <div className="mb-2 text-base">How can I assist you with your steel industry needs today?</div>
-               
               </div>
             ) : (
-              messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} w-full`}
-                >
+              <>
+                {messages.map((message) => (
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3 shadow-sm ${
-                      message.role === "user"
-                        ? "bg-eoxs-green text-black rounded-tr-none"
-                        : "bg-white text-black rounded-tl-none border border-gray-100"
-                    }`}
+                    key={message.id}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} w-full`}
                   >
-                    <div className="flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div
-                          className={`text-xs font-medium mb-1 ${
-                            message.role === "user" ? "text-black" : "text-eoxs-green"
-                          }`}
-                        >
-                          {message.role === "user" ? "You" : "Joseph Malchar"}
-                        </div>
+                    <div
+                      className={`max-w-[85%] rounded-2xl p-3 shadow-sm ${
+                        message.role === "user"
+                          ? "bg-eoxs-green text-black rounded-tr-none"
+                          : "bg-white text-black rounded-tl-none border border-gray-100"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className={`text-xs font-medium mb-1 ${
+                              message.role === "user" ? "text-black" : "text-eoxs-green"
+                            }`}
+                          >
+                            {message.role === "user" ? "You" : "Joseph Malchar"}
+                          </div>
                           <div className="text-base whitespace-pre-wrap break-words">
                             {message.role === "assistant" && isTyping[message.id]
                               ? displayedContent[message.id] || ""
@@ -169,63 +169,81 @@ export default function TextOnlyChat() {
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-
-          <div className="border-t border-gray-200 p-4">
-            <div className="max-w-3xl mx-auto">
-              <form onSubmit={handleSendMessage} className="flex gap-2">
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={handleInputChange}
-                  placeholder="Type your message..."
-                  disabled={isLoading || isAnyMessageTyping}
-                  className="flex-1 bg-white text-gray-900 border-gray-200 placeholder-gray-500"
-                />
-                {/* Voice Button */}
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-300 text-gray-900 hover:bg-gray-100 active:scale-95 transition-transform duration-100 mr-2"
-                  aria-label="Voice input"
-                >
-                  <Mic className="h-5 w-5" />
-                </button>
-                {/* Send Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading || !input.trim()} 
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-black text-white hover:bg-gray-900 active:scale-95 transition-transform duration-100"
-                  aria-label="Send message"
-                >
-                  <ArrowUp className="h-5 w-5" />
-                </button>
-                {(isLoading || isAnyMessageTyping) && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={handleStopGeneration}
-                          className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 active:scale-95 transition-transform duration-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-eoxs-green"
-                          aria-label="Stop generating"
-                        >
-                          <span className="block w-4 h-4 bg-white rounded-sm"></span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Stop generating</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start w-full">
+                    <div className="max-w-[85%] rounded-2xl p-3 shadow-sm bg-white text-black rounded-tl-none border border-gray-100">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium mb-1 text-eoxs-green">
+                            Joseph Malchar
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <div className="animate-spin h-4 w-4 border-2 border-eoxs-green border-t-transparent rounded-full"></div>
+                            <span>Joe is thinking...</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </form>
-            </div>
+              </>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         </div>
-      </main>
-    )
+
+        <div className="border-t border-gray-200 p-4">
+          <div className="max-w-3xl mx-auto">
+            <form onSubmit={handleSendMessage} className="flex gap-2">
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                placeholder="Type your message..."
+                disabled={isLoading || isAnyMessageTyping}
+                className="flex-1 bg-white text-gray-900 border-gray-200 placeholder-gray-500"
+              />
+              {/* Voice Button */}
+              <button
+                type="button"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-300 text-gray-900 hover:bg-gray-100 active:scale-95 transition-transform duration-100 mr-2"
+                aria-label="Voice input"
+              >
+                <Mic className="h-5 w-5" />
+              </button>
+              {/* Send Button */}
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim()} 
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-black text-white hover:bg-gray-900 active:scale-95 transition-transform duration-100"
+                aria-label="Send message"
+              >
+                <ArrowUp className="h-5 w-5" />
+              </button>
+              {(isLoading || isAnyMessageTyping) && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={handleStopGeneration}
+                        className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 active:scale-95 transition-transform duration-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-eoxs-green"
+                        aria-label="Stop generating"
+                      >
+                        <span className="block w-4 h-4 bg-white rounded-sm"></span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Stop generating</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
 } 

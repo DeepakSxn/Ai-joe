@@ -37,26 +37,9 @@ export default function ChatMessage({
   // Typing animation - only for avatar mode
   useEffect(() => {
     if (mode === "avatar" && !isUser && isSpeaking && triggerSync && fullContent) {
-      setDisplayedContent("");
-      wordIndexRef.current = 0;
-      setIsTyping(true);
-
-      const delayPerWord =
-        durationMs && words.length > 0 ? durationMs / words.length : 300;
-
-      intervalRef.current = setInterval(() => {
-        const word = words[wordIndexRef.current];
-        if (typeof word === "string") {
-          setDisplayedContent((prev) => prev + word + " ");
-        }
-
-        wordIndexRef.current++;
-
-        if (wordIndexRef.current >= words.length && intervalRef.current) {
-          clearInterval(intervalRef.current);
-          setIsTyping(false);
-        }
-      }, delayPerWord);
+      // Directly set the content without typing animation
+      setDisplayedContent(fullContent);
+      setIsTyping(false);
     } else if (mode === "text-only") {
       // For text-only mode, show content immediately
       setDisplayedContent(fullContent);
@@ -122,7 +105,7 @@ export default function ChatMessage({
                 <div className={`flex items-center gap-2 text-sm ${
                   theme === "dark" ? "text-gray-400" : "text-gray-500"
                 }`}>
-                  <Loader2 className="animate-spin h-4 w-4" />
+                  <div className="animate-spin h-4 w-4 border-2 border-eoxs-green border-t-transparent rounded-full"></div>
                   <span>Joe is thinking...</span>
                 </div>
               ) : (

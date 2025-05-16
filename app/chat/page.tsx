@@ -51,7 +51,7 @@ export default function ChatPage() {
         const messageId = lastCompletedAssistantMessage.id
         const text = lastCompletedAssistantMessage.content
 
-        setTriggerSyncId(null) // reset trigger
+        setTriggerSyncId(messageId) // Set trigger immediately
         setCurrentlySpeakingId(messageId)
 
         const result = await avatarRef.current.speak(text) // returns { duration_ms, task_id }
@@ -62,8 +62,6 @@ export default function ChatPage() {
             [messageId]: result.duration_ms + 1000,
           }))
         }
-
-        setTriggerSyncId(messageId) // trigger typing effect
       }
     }
 
@@ -324,6 +322,26 @@ export default function ChatPage() {
                   mode="avatar"
                 />
               ))}
+              {isLoading && (
+                <div className="flex justify-start w-full">
+                  <div className="max-w-[85%] rounded-2xl p-3 shadow-sm bg-white text-black rounded-tl-none border border-gray-100">
+                    <div className="flex items-start gap-2">
+                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 bg-white border border-gray-200">
+                        <img src="/pic.png" alt="Joseph Malchar" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium mb-1 text-eoxs-green">
+                          Joseph Malchar
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="animate-spin h-4 w-4 border-2 border-eoxs-green border-t-transparent rounded-full"></div>
+                          <span>Joe is thinking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
