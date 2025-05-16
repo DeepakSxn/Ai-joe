@@ -14,6 +14,7 @@ import { Send, Mic, MicOff, X, MessageSquare, Volume2, Bot, ArrowRight, ArrowLef
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
+import TemperatureToggle from "@/components/temperature-toggle"
 
 type ChatMode = "text-only" | "avatar" | null
 
@@ -28,6 +29,7 @@ export default function ChatPage() {
   const [stoppedTypingId, setStoppedTypingId] = useState<string | null>(null)
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null)
   const [triggerSyncId, setTriggerSyncId] = useState<string | null>(null)
+  const [temperatureUnit, setTemperatureUnit] = useState<"C" | "F">("F")
 
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const [showConversation, setShowConversation] = useState(!isMobile)
@@ -80,10 +82,14 @@ export default function ChatPage() {
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!hasInteracted) setHasInteracted(true)
-    setCurrentlySpeakingId("pending") // Set speaking state immediately when sending
+    setCurrentlySpeakingId("pending")
+    
+    // Add temperature unit to the input
+    const messageWithUnit = `${input} (Temperature unit: ${temperatureUnit})`
+    // Update the input value directly
+    handleInputChange({ target: { value: messageWithUnit } } as React.ChangeEvent<HTMLInputElement>)
     await handleSubmit(e)
 
-    // Focus the input after sending
     if (inputRef.current) {
       inputRef.current.focus()
     }
@@ -105,7 +111,7 @@ export default function ChatPage() {
     } else {
       setChatMode(mode)
       setHasInteracted(true)
-    }
+    } 
   }
 
   const handleReset = () => {
@@ -128,26 +134,40 @@ export default function ChatPage() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/about")}
+            className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+          >
+            About
+          </Button>
           {hasInteracted && chatMode && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReset}
-                    className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-1" />
-                    Change Mode
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Switch between text and avatar modes</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <>
+              <TemperatureToggle 
+                onTemperatureChange={setTemperatureUnit}
+                defaultUnit="F"
+              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleReset}
+                      className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" />
+                      Change Mode
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Switch between text and avatar modes</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       </header>
@@ -157,8 +177,8 @@ export default function ChatPage() {
         <div className="flex-1 flex items-center justify-center p-4 bg-white">
           <div className="w-full max-w-4xl">
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-2 text-gray-900">Welcome to Joe 2.0</h1>
-              <h2 className="text-2xl font-semibold text-gray-700">The Expert Steel Industry Advisor</h2>
+              <h1 className="text-4xl  mb-2 text-black-600  ">Welcome to Joe 2.0</h1>
+              <h2 className="text-2xl font-semibold text-gray-700"> I'll  answers your questions — just like I did on the floor</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -326,14 +346,11 @@ export default function ChatPage() {
                 <div className="flex justify-start w-full">
                   <div className="max-w-[85%] rounded-2xl p-3 shadow-sm bg-white text-black rounded-tl-none border border-gray-100">
                     <div className="flex items-start gap-2">
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mt-0.5 bg-white border border-gray-200">
-                        <img src="/pic.png" alt="Joseph Malchar" className="w-full h-full object-cover" />
-                      </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium mb-1 text-eoxs-green">
+                        <div className="text-xs mb-1 text-[#10a37f]" style={{ fontWeight: 500 }}>
                           Joseph Malchar
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 text-sm" style={{ color: "#4A5568" }}>
                           <div className="animate-spin h-4 w-4 border-2 border-eoxs-green border-t-transparent rounded-full"></div>
                           <span>Joe is thinking...</span>
                         </div>

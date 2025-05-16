@@ -8,6 +8,7 @@ import { Send, X, ArrowLeft, StopCircle, Mic, ArrowUp } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 import type { Message } from "ai"
+import TemperatureToggle from "@/components/temperature-toggle"
 
 export default function TextOnlyChat() {
   const router = useRouter()
@@ -27,6 +28,7 @@ export default function TextOnlyChat() {
   const [isTyping, setIsTyping] = useState<Record<string, boolean>>({})
   const [stoppedTypingId, setStoppedTypingId] = useState<string | null>(null)
   const [isAnyMessageTyping, setIsAnyMessageTyping] = useState(false)
+  const [temperatureUnit, setTemperatureUnit] = useState<"C" | "F">("F")
 
   // Auto-scroll
   useEffect(() => {
@@ -70,11 +72,15 @@ export default function TextOnlyChat() {
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setStoppedTypingId(null) // Reset stopped typing state
-    setIsAnyMessageTyping(true) // Set typing state immediately when sending
+    setStoppedTypingId(null)
+    setIsAnyMessageTyping(true)
+    
+    // Add temperature unit to the input
+    const messageWithUnit = `${input} (Temperature unit: ${temperatureUnit})`
+    // Update the input value directly
+    handleInputChange({ target: { value: messageWithUnit } } as React.ChangeEvent<HTMLInputElement>)
     await handleSubmit(e)
 
-    // Focus the input after sending
     if (inputRef.current) {
       inputRef.current.focus()
     }
@@ -101,7 +107,11 @@ export default function TextOnlyChat() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <TemperatureToggle 
+            onTemperatureChange={setTemperatureUnit}
+            defaultUnit="F"
+          />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -151,13 +161,14 @@ export default function TextOnlyChat() {
                       <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <div
-                            className={`text-xs font-medium mb-1 ${
-                              message.role === "user" ? "text-black" : "text-eoxs-green"
+                            className={`text-xs mb-1 ${
+                              message.role === "user" ? "text-[#1B1212]" : "text-[#10a37f]"
                             }`}
+                            style={{ fontWeight: 500 }}
                           >
                             {message.role === "user" ? "You" : "Joseph Malchar"}
                           </div>
-                          <div className="text-base whitespace-pre-wrap break-words">
+                          <div className="text-base whitespace-pre-wrap break-words" style={{ color: "#2D3748" }}>
                             {message.role === "assistant" && isTyping[message.id]
                               ? displayedContent[message.id] || ""
                               : message.content}
@@ -175,10 +186,10 @@ export default function TextOnlyChat() {
                     <div className="max-w-[85%] rounded-2xl p-3 shadow-sm bg-white text-black rounded-tl-none border border-gray-100">
                       <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium mb-1 text-eoxs-green">
+                          <div className="text-xs mb-1 text-[#10a37f]" style={{ fontWeight: 500 }}>
                             Joseph Malchar
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-2 text-sm" style={{ color: "#4A5568" }}>
                             <div className="animate-spin h-4 w-4 border-2 border-eoxs-green border-t-transparent rounded-full"></div>
                             <span>Joe is thinking...</span>
                           </div>
