@@ -9,7 +9,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useRouter } from "next/navigation"
 import type { Message } from "ai"
 import Cookies from "js-cookie"
-import IdleTimer from "@/components/idle-timer"
 
 
 export default function TextOnlyChat() {
@@ -98,14 +97,13 @@ export default function TextOnlyChat() {
 
   return (
     <main className="flex flex-col h-screen bg-white text-black">
-      <IdleTimer />
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-700 bg-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-700 bg-gray-800 px-4 py-2 flex items-center justify-between shadow-sm h-16">
+        <div className="flex items-center gap-2 h-full">
           <img 
             src="/logo.svg" 
             alt="EOXS Logo" 
-            className="h-12 w-auto max-w-[180px] object-contain" 
+            className="h-[120px] w-[80px] object-contain -mt-2" 
           />
         </div>
 

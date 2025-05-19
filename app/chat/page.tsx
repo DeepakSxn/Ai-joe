@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
-import IdleTimer from "@/components/idle-timer"
 
 type ChatMode = "text-only" | "avatar" | null
 
@@ -124,26 +123,27 @@ export default function ChatPage() {
 
   return (
     <main className="flex flex-col h-screen bg-white text-black">
-      <IdleTimer />
       {/* Header */}
-      <header className="w-full border-b border-gray-700 bg-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
+      <header className="w-full border-b border-gray-700 bg-gray-800 px-4 py-2 flex items-center justify-between shadow-sm h-16">
+        <div className="flex items-center gap-2 h-full">
           <img 
             src="/logo.svg" 
             alt="EOXS Logo" 
-            className="h-12 w-auto max-w-[180px] object-contain" 
+            className="h-[120px] w-[80px] object-contain -mt-2" 
           />
         </div>
 
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/about")}
-            className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
-          >
-            About
-          </Button>
+          {(!hasInteracted || chatMode === null) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/about")}
+              className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+            >
+              About
+            </Button>
+          )}
           {hasInteracted && chatMode && (
             <TooltipProvider>
               <Tooltip>
@@ -265,7 +265,7 @@ export default function ChatPage() {
 
                     <div className="h-40 flex items-center justify-center bg-[#f7f7f8] rounded-lg mb-4">
                       <div className="flex flex-col items-center">
-                        <img src="/joe-avatar.png" alt="Joe Avatar" className="h-16 w-16 rounded-full mb-2" />
+                        <img src="/image.png" alt="Joe Avatar" className="h-16 w-16 rounded-full mb-2" />
                         <div className="text-base" style={{ color: "#4A5568" }}>Live expert advice</div>
                       </div>
                     </div>
