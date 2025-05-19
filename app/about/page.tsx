@@ -13,7 +13,7 @@ export default function AboutPage() {
       <header className="w-full border-b border-gray-700 bg-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <img 
-            src="/dark.webp" 
+            src="/logo.svg" 
             alt="EOXS Logo" 
             className="h-12 w-auto max-w-[180px] object-contain" 
           />
@@ -39,7 +39,7 @@ export default function AboutPage() {
           <div className="flex flex-col items-center justify-center mb-8">
             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#10a37f] mb-6">
               <img 
-                src="/joe-avatar.png" 
+                src="/image.png" 
                 alt="Joe Avatar" 
                 className="w-full h-full object-cover"
               />
