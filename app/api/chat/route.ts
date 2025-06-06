@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           // Split the response into chunks for streaming
-          const chunks = response.split(/(?<=\.|\n)/)
+          const chunks = response.text.split(/(?<=\.|\n)/)
           for (const chunk of chunks) {
             if (chunk.trim()) {
               controller.enqueue(encoder.encode(chunk))
