@@ -5,9 +5,6 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  experimental: {
-    optimizeCss: true,
-  },
   webpack: (config, { dev, isServer }) => {
     // Optimize CSS loading
     if (!dev && !isServer) {
