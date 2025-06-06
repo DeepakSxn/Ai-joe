@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 import Cookies from "js-cookie"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 export default function AdminLoginPage() {
   const router = useRouter()
