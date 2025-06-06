@@ -1,30 +1,29 @@
 "use server";
 
+
 import { OpenAI } from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const assistantId = process.env.OPENAI_ASSISTANT_ID!;
 
-export async function generateChatResponse(messages: any[]) {
+export async function generateChatResponse(messages: any[], threadId?: string) {
   try {
+    const thread = threadId
+      ? await openai.beta.threads.retrieve(threadId)
+      : await openai.beta.threads.create();
+
     const lastUserMessage = messages.filter(m => m.role === "user").pop();
     if (!lastUserMessage) throw new Error("No user message found.");
 
-    // Create a temporary thread for this interaction
-    const thread = await openai.beta.threads.create();
-    
-    // Add the user's message to the thread
     await openai.beta.threads.messages.create(thread.id, {
       role: "user",
-      content: lastUserMessage.content
+      content: lastUserMessage.content,
     });
 
-    // Create and run the assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: assistantId
+      assistant_id: assistantId,
     });
 
-    // Poll for completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     while (["queued", "in_progress"].includes(runStatus.status)) {
       await new Promise(res => setTimeout(res, 1000));
@@ -32,8 +31,8 @@ export async function generateChatResponse(messages: any[]) {
     }
 
     if (runStatus.status === "completed") {
-      const messages = await openai.beta.threads.messages.list(thread.id);
-      const lastMessage = messages.data.find(m => m.role === "assistant");
+      const threadMessages = await openai.beta.threads.messages.list(thread.id);
+      const lastMessage = threadMessages.data.find(m => m.role === "assistant");
       const textContent = lastMessage?.content.find(c => c.type === "text");
 
       if (!textContent || textContent.type !== "text") {
@@ -41,7 +40,8 @@ export async function generateChatResponse(messages: any[]) {
       }
 
       return {
-        text: textContent.text.value
+        text: textContent.text.value,
+        threadId: thread.id, // ✅ return for frontend session
       };
     } else {
       throw new Error(`Run ended with status: ${runStatus.status}`);
