@@ -44,7 +44,7 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
     });
   };
 
-  // ✅ Speak with 1 retry if first call fails
+  
   const speak = async (text: string): Promise<{ duration_ms?: number; task_id?: string }> => {
     if (!avatar || !text) return {};
 
