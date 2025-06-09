@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
+import { useAnalytics } from "@/hooks/use-analytics"
 
 type ChatMode = "text-only" | "avatar" | null
 
@@ -38,6 +39,8 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
+  const analytics = useAnalytics("avatar")
+  const [sessionStarted, setSessionStarted] = useState(false)
 
   // Init avatar only if avatar mode is selected
   useEffect(() => {
@@ -82,8 +85,17 @@ export default function ChatPage() {
     e.preventDefault()
     if (!hasInteracted) setHasInteracted(true)
     setCurrentlySpeakingId("pending")
+    if (!sessionStarted) {
+      await analytics.startSession()
+      setSessionStarted(true)
+    }
+    // Track user message
+    analytics.trackMessage({
+      id: crypto.randomUUID(),
+      role: "user",
+      content: input,
+    })
     await handleSubmit(e)
-
     if (inputRef.current) {
       inputRef.current.focus()
     }
@@ -121,6 +133,18 @@ export default function ChatPage() {
     router.push("/login")
   }
 
+  // Add effect to track assistant messages
+  useEffect(() => {
+    if (lastCompletedAssistantMessage && sessionStarted) {
+      analytics.trackMessage({
+        id: lastCompletedAssistantMessage.id,
+        role: "assistant",
+        content: lastCompletedAssistantMessage.content,
+        duration: messageDurations[lastCompletedAssistantMessage.id],
+      })
+    }
+  }, [lastCompletedAssistantMessage, messageDurations, sessionStarted])
+
   return (
     <main className="flex flex-col h-screen bg-white text-black">
       {/* Header */}
@@ -145,24 +169,34 @@ export default function ChatPage() {
             </Button>
           )}
           {hasInteracted && chatMode && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReset}
-                    className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-1" />
-                    Change Mode
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Switch between text and avatar modes</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleReset}
+                      className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" />
+                      Change Mode
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Switch between text and avatar modes</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/analytics")}
+                className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+              >
+                Analytics
+              </Button>
+            </>
           )}
           <TooltipProvider>
             <Tooltip>

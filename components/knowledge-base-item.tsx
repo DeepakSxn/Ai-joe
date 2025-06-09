@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
+import { useAnalytics } from "@/contexts/AnalyticsContext"
 
 interface KnowledgeBaseItemProps {
   id: string
@@ -27,6 +28,7 @@ interface KnowledgeBaseItemProps {
 export default function KnowledgeBaseItem({ id, name, date, size, onDelete }: KnowledgeBaseItemProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const { toast } = useToast()
+  const { startSession, trackMessage } = useAnalytics("avatar")
 
   const handleDelete = async () => {
     setIsDeleting(true)

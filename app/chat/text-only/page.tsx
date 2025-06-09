@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useRouter } from "next/navigation"
 import type { Message } from "ai"
 import Cookies from "js-cookie"
+import { useAnalytics } from "@/hooks/use-analytics"
 
 
 export default function TextOnlyChat() {
@@ -29,6 +30,10 @@ export default function TextOnlyChat() {
   const [isTyping, setIsTyping] = useState<Record<string, boolean>>({})
   const [stoppedTypingId, setStoppedTypingId] = useState<string | null>(null)
   const [isAnyMessageTyping, setIsAnyMessageTyping] = useState(false)
+  const [messageDurations, setMessageDurations] = useState<Record<string, number>>({})
+  const [hasInteracted, setHasInteracted] = useState(false)
+  const analytics = useAnalytics("text-only")
+  const [sessionStarted, setSessionStarted] = useState(false)
 
   // Auto-scroll
   useEffect(() => {
@@ -70,16 +75,42 @@ export default function TextOnlyChat() {
     setIsAnyMessageTyping(isTyping)
   }, [messages, stoppedTypingId])
 
+  // Update handleSendMessage to track messages
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setStoppedTypingId(null)
     setIsAnyMessageTyping(true)
+    if (!sessionStarted) {
+      await analytics.startSession()
+      setSessionStarted(true)
+    }
+    // Track user message
+    analytics.trackMessage({
+      id: crypto.randomUUID(),
+      role: "user",
+      content: input,
+    })
     await handleSubmit(e)
 
     if (inputRef.current) {
       inputRef.current.focus()
     }
   }
+
+  // Add effect to track assistant messages
+  useEffect(() => {
+    if (!sessionStarted) return
+    messages.forEach((message) => {
+      if (message.role === "assistant" && !displayedContent[message.id]) {
+        analytics.trackMessage({
+          id: message.id,
+          role: "assistant",
+          content: message.content,
+          duration: messageDurations[message.id],
+        })
+      }
+    })
+  }, [messages, displayedContent, messageDurations, sessionStarted])
 
   const handleStopGeneration = () => {
     handleStop()
@@ -118,11 +149,28 @@ export default function TextOnlyChat() {
                   className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Chat
+                  Back
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Return to chat selection</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push("/analytics")}
+                  className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+                >
+                  Analytics
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View analytics</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

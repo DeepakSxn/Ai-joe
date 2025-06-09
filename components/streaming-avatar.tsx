@@ -14,14 +14,23 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { theme } = useTheme();
 
-  const fetchAccessToken = async (): Promise<string> => {
-    const response = await fetch("/api/heygen-token");
-    const { token } = await response.json();
-    return token;
+  const fetchAccessToken = async (): Promise<string | null> => {
+    const apiKey = process.env.NEXT_PUBLIC_HEYGEN_API_KEY;
+    const response = await fetch("https://api.heygen.com/v1/streaming.create_token", {
+      method: "POST",
+      headers: { "x-api-key": apiKey! },
+    });
+    const { data } = await response.json();
+    console.log("HeyGen token (direct):", data.token);
+    return data.token;
   };
 
   const initialize = async () => {
     const token = await fetchAccessToken();
+    if (!token) {
+      alert("Failed to fetch HeyGen token. Please try again later or contact support.");
+      return;
+    }
     const avatarInstance = new StreamingAvatar({ token });
     setAvatar(avatarInstance);
 
@@ -44,7 +53,7 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
     });
   };
 
-  
+  // ✅ Speak with 1 retry if first call fails
   const speak = async (text: string): Promise<{ duration_ms?: number; task_id?: string }> => {
     if (!avatar || !text) return {};
 
