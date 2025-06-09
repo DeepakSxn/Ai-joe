@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
-import { useAnalytics } from "@/contexts/AnalyticsContext"
+import { useAnalytics } from "@/hooks/use-analytics"
 
 interface KnowledgeBaseItemProps {
   id: string
