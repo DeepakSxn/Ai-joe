@@ -30,6 +30,7 @@ export default function ChatPage() {
   const [stoppedTypingId, setStoppedTypingId] = useState<string | null>(null)
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null)
   const [triggerSyncId, setTriggerSyncId] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
 
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const [showConversation, setShowConversation] = useState(!isMobile)
@@ -50,27 +51,47 @@ export default function ChatPage() {
   }, [hasInteracted, chatMode])
 
   useEffect(() => {
+    let retryCount = 0;
+    let retryTimeout: NodeJS.Timeout | null = null;
+    const maxRetries = 5;
+
     const speakMessage = async () => {
       if (lastCompletedAssistantMessage && avatarRef.current && chatMode === "avatar") {
-        const messageId = lastCompletedAssistantMessage.id
-        const text = lastCompletedAssistantMessage.content
+        const messageId = lastCompletedAssistantMessage.id;
+        const text = lastCompletedAssistantMessage.content;
 
-        setTriggerSyncId(messageId) // Set trigger immediately
-        setCurrentlySpeakingId(messageId)
+        setTriggerSyncId(messageId); // Set trigger immediately
+        setCurrentlySpeakingId(messageId);
+        setAvatarError(null); // Clear previous error
 
-        const result = await avatarRef.current.speak(text) // returns { duration_ms, task_id }
-
-        if (result?.duration_ms) {
-          setMessageDurations((prev) => ({
-            ...prev,
-            [messageId]: result.duration_ms + 1000,
-          }))
-        }
+        const trySpeak = async () => {
+          try {
+            const result = await avatarRef.current.speak(text); // returns { duration_ms, task_id }
+            if (result?.duration_ms) {
+              setMessageDurations((prev) => ({
+                ...prev,
+                [messageId]: result.duration_ms + 1000,
+              }));
+            }
+          } catch (err) {
+            if (retryCount < maxRetries) {
+              retryCount++;
+              retryTimeout = setTimeout(trySpeak, 5000);
+            } else {
+              setAvatarError("Network error: Avatar could not speak the response.");
+              console.error("Avatar speak failed after retries", err);
+            }
+          }
+        };
+        trySpeak();
       }
-    }
+    };
 
-    speakMessage()
-  }, [lastCompletedAssistantMessage, chatMode])
+    speakMessage();
+    return () => {
+      if (retryTimeout) clearTimeout(retryTimeout);
+    };
+  }, [lastCompletedAssistantMessage, chatMode]);
 
   // Auto-scroll
   useEffect(() => {
@@ -355,6 +376,11 @@ export default function ChatPage() {
             <div className="w-full h-full max-w-[1000px]">
               <StreamingAvatarComponent ref={avatarRef} />
             </div>
+            {avatarError && (
+              <div className="mt-4 text-red-600 font-semibold text-center">
+                {avatarError}
+              </div>
+            )}
 
             {/* Toggle Chat Button (Mobile Only) */}
             {isMobile && (

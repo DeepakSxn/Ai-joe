@@ -26,6 +26,7 @@ export default function ChatMessage({
 }: ChatMessageProps) {
   const [displayedContent, setDisplayedContent] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [pendingFirstAssistantMessage, setPendingFirstAssistantMessage] = useState<Message | null>(null);
 
   const isUser = message.role === "user";
   const fullContent = message.content ?? "";
