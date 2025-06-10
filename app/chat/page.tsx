@@ -159,14 +159,24 @@ export default function ChatPage() {
 
         <div className="flex items-center gap-4">
           {(!hasInteracted || chatMode === null) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/about")}
-              className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
-            >
-              About
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/about")}
+                className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+              >
+                About
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/analytics")}
+                className="text-gray-200 bg-gray-700 hover:bg-gray-600 border-gray-600"
+              >
+                Analytics
+              </Button>
+            </>
           )}
           {hasInteracted && chatMode && (
             <>
