@@ -48,12 +48,33 @@ export function useAnalytics(mode: "text-only" | "avatar") {
   // Call this to track a message
   const trackMessage = async (message: Omit<Message, "timestamp">) => {
     if (!sessionRef.current || !sessionDocId.current) return
+
+    // For assistant messages, check if there's already a response for the last user message
+    if (message.role === "assistant") {
+      const lastUserMessage = [...sessionRef.current.messages]
+        .reverse()
+        .find(msg => msg.role === "user")
+      
+      if (lastUserMessage) {
+        const hasExistingResponse = sessionRef.current.messages.some(
+          msg => msg.role === "assistant" && msg.timestamp > lastUserMessage.timestamp
+        )
+        
+        if (hasExistingResponse) {
+          console.warn('Duplicate assistant response detected for user message:', lastUserMessage.id)
+          return
+        }
+      }
+    }
+
     const messageWithTimestamp = cleanMessage({
       ...message,
       timestamp: new Date().toISOString(),
     }) as unknown as Message
+
     sessionRef.current.messages.push(messageWithTimestamp)
     sessionRef.current.endTime = new Date().toISOString()
+
     // Deep clean all messages before sending to Firestore
     const cleanedMessages = sessionRef.current.messages.map(cleanMessage)
     await updateDoc(doc(db, "sessions", sessionDocId.current), {
