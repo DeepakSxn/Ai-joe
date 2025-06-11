@@ -46,7 +46,7 @@ const StreamingAvatarComponent = forwardRef((props, ref) => {
     });
 
     await avatarInstance.createStartAvatar({
-      quality: AvatarQuality.Medium,
+      quality: AvatarQuality.Low,
       avatarName: process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID!,
       language: "English",
       disableIdleTimeout: true,
